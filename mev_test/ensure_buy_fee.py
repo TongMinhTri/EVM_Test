@@ -104,7 +104,6 @@ def init_token():
     erc20token['0x1e241521f4767853b376c2fe795a222a07d588ee'] = TokenFixedFee(5)
     erc20token['0x622984873c958e00aa0f004cbdd2b5301cf0b132'] = TokenFixedFee(5)
     erc20token['0xc15e520e80ce9d3bfd2f3dacc902545d60804573'] = TokenFixedFee(3)
-    # erc20token['0x14fee680690900ba0cccfc76ad70fd1b95d10e16'] = TokenFixedFee(4) => Actual buy fee 0% ??
     erc20token['0x292fcdd1b104de5a00250febba9bc6a5092a0076'] = TokenFixedFee(0)
     erc20token['0xa3cb87080e68ad54d00573983d935fa85d168fde'] = TokenFixedFee(3)
     erc20token['0xccf5cf1d039f1a7b66be855b79b14a01d0a4dbd5'] = TokenFixedFee(4)
