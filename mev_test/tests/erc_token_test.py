@@ -21,7 +21,7 @@ class UniswapV2Test(unittest.TestCase):
         self.erc20_contracts["WETH"] = Contract(address="0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2", revm=self.evm,
                                                 abi_file_path="./abi/weth.abi")
 
-        with open("./data/token.txt") as f:
+        with open("./data/token_have_transfer_fee.txt") as f:
             for line in f.readlines():
                 token = line[0: 42].rstrip()
                 name = line[43:].rstrip()

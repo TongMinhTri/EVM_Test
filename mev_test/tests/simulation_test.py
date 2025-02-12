@@ -1,13 +1,13 @@
-import unittest
 import os
-from abi import ABIFunction, ContractABI
-from contract import Contract
-from pyrevm import EVM, AccountInfo, BlockEnv, Env, TxEnv
+import unittest
+
+from pyrevm import EVM, BlockEnv
 from web3 import Web3
 
+from contract import Contract
 
 FORK_URL = os.getenv("FORK_URL") or "http://192.168.1.58:8545"
-BLOCK_NUM=20967700
+BLOCK_NUM = 20967700
 ERC20_LIST = [
     ('DOGE2.0', '0xF2ec4a773ef90c58d98ea734c0eBDB538519b988'),
     ('Neiro', '0x812Ba41e071C7b7fA4EBcFB62dF5F45f6fA853Ee'),
@@ -22,11 +22,13 @@ UNISWAP_V2_PAIRS = [
     ('Neiro-DOGE2.0', '0x270250af8569D4ff712AaEbC2F5971A824249fA7'),
     ('Neiro-KABOSU', '0x6A516271870A48F4F6c72044Ca64Ec9c69ac4efc')
 ]
-MY_ADDR = "0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045" # vitalik.eth
+MY_ADDR = "0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045"  # vitalik.eth
+
 
 class UniswapV2Test(unittest.TestCase):
     erc20_contracts: dict = dict()
     uniswap_v2_pairs: dict = dict()
+
     def init_contract(self):
         self.erc20_contracts["WETH"] = Contract(
             address="0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
@@ -36,10 +38,10 @@ class UniswapV2Test(unittest.TestCase):
 
         for name, addr in ERC20_LIST:
             self.erc20_contracts[name] = Contract(
-                    address=addr,
-                    revm=self.evm,
-                    abi_file_path="./abi/erc20.abi"
-                )
+                address=addr,
+                revm=self.evm,
+                abi_file_path="./abi/erc20.abi"
+            )
 
         for name, pair_addr in UNISWAP_V2_PAIRS:
             self.uniswap_v2_pairs[name] = Contract(
@@ -60,7 +62,6 @@ class UniswapV2Test(unittest.TestCase):
             abi_file_path="./abi/uniswapv2factory.abi"
         )
 
-
     def setUp(self) -> None:
         self.w3 = Web3(Web3.HTTPProvider(FORK_URL))
         block = self.w3.eth.get_block(block_identifier=BLOCK_NUM, full_transactions=True)
@@ -68,21 +69,23 @@ class UniswapV2Test(unittest.TestCase):
         self.init_contract()
         return super().setUp()
 
-
     def init_block(self, block_number):
         block = self.w3.eth.get_block(block_identifier=block_number, full_transactions=True)
         print("Block hash", block["hash"].hex())
         blockEnv = BlockEnv(number=block["number"], timestamp=block["timestamp"])
         self.evm.set_block_env(blockEnv)
         balance = self.evm.get_balance(MY_ADDR)
-        self.erc20_contracts['WETH'].deposit(value=10**19, caller=MY_ADDR)
+        self.erc20_contracts['WETH'].deposit(value=10 ** 19, caller=MY_ADDR)
         print("Current WETH: ", self.erc20_contracts['WETH'].balanceOf(MY_ADDR))
         return block
 
     def test_swap(self):
         print("OK RUN TEST NOW")
-        result = self.uniswap_v2_router.swapExactTokensForTokens(1000000000, 1, [self.erc20_contracts['WETH'].address, self.erc20_contracts['DOGE2.0'].address], MY_ADDR, 1734284800, caller=MY_ADDR)
-        print("BalanceOf DOGE2.0: ",  self.erc20_contracts['DOGE2.0'].balanceOf(MY_ADDR))
+        result = self.uniswap_v2_router.swapExactTokensForTokens(1000000000, 1, [self.erc20_contracts['WETH'].address,
+                                                                                 self.erc20_contracts[
+                                                                                     'DOGE2.0'].address], MY_ADDR,
+                                                                 1734284800, caller=MY_ADDR)
+        print("BalanceOf DOGE2.0: ", self.erc20_contracts['DOGE2.0'].balanceOf(MY_ADDR))
 
         r0, r1, _ts = self.uniswap_v2_pairs['Neiro-DOGE2.0'].getReserves()
         print("Reverse: ", r0, r1)
@@ -95,7 +98,8 @@ class UniswapV2Test(unittest.TestCase):
         print("contract: ", amount_out, amount_in)
 
         print("Amount out: ", amount_out)
-        self.erc20_contracts['DOGE2.0'].transfer(self.uniswap_v2_pairs['Neiro-DOGE2.0'].address, int(100000000 * 1.01), caller=MY_ADDR)
+        self.erc20_contracts['DOGE2.0'].transfer(self.uniswap_v2_pairs['Neiro-DOGE2.0'].address, int(100000000 * 1.01),
+                                                 caller=MY_ADDR)
         self.uniswap_v2_pairs['Neiro-DOGE2.0'].swap(amount_out, 0, MY_ADDR, b'', caller=MY_ADDR)
 
         self.erc20_contracts['Neiro'].approve(self.uniswap_v2_router.address, 0x10000000000000000000, caller=MY_ADDR)
@@ -116,11 +120,11 @@ class UniswapV2Test(unittest.TestCase):
 
     def test_transfer(self):
 
-        with open("./data/token.txt") as f:
+        with open("./data/token_have_transfer_fee.txt") as f:
             for line in f.readlines():
                 l = line.split(" ")
                 print("Token: {}, name: {}".format(l[0], l[1]))
-                
+
         block = self.init_block(BLOCK_NUM)
         self.erc20_contracts['WETH'].approve(self.uniswap_v2_router.address, 0x10000000000000000000, caller=MY_ADDR)
 
@@ -132,7 +136,8 @@ class UniswapV2Test(unittest.TestCase):
         for name, addr in ERC20_LIST:
             print("Transfer token Name: {}".format(name))
             old_balance = self.erc20_contracts[name].balanceOf(MY_ADDR)
-            amount_in, amount_out = self.uniswap_v2_router.swapExactTokensForTokens(1000000000, 1, [self.erc20_contracts['WETH'].address, addr], MY_ADDR, 1734284800, caller=MY_ADDR)
+            amount_in, amount_out = self.uniswap_v2_router.swapExactTokensForTokens(1000000000, 1, [
+                self.erc20_contracts['WETH'].address, addr], MY_ADDR, 1734284800, caller=MY_ADDR)
             print("Swap {} amount {} to {} amount {}".format("WETH", amount_in, name, amount_out))
             print("Balance Token {} = {}".format(name, self.erc20_contracts[name].balanceOf(MY_ADDR)))
             new_balance = self.erc20_contracts[name].balanceOf(MY_ADDR)
@@ -148,6 +153,7 @@ class UniswapV2Test(unittest.TestCase):
                 result.append((name, addr))
             print("--" * 30)
         print(result)
+
 
 if __name__ == "__main__":
     unittest.main()
